@@ -24,7 +24,7 @@ Windows 原生 PowerShell 截圖剪貼簿工具。截圖後自動將檔案路徑
 ## 安裝
 
 ```powershell
-irm https://raw.githubusercontent.com/kerwin77106/Cli-Screenshot/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/kerwin77106/Claude-Cli-Screenshot/main/install.ps1 | iex
 ```
 
 ## 使用方式

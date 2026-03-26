@@ -6,14 +6,14 @@
     Downloads and installs cli-screenshot to ~/.cli-screenshot/
     Creates a .cmd wrapper and adds to User PATH.
 .EXAMPLE
-    irm https://raw.githubusercontent.com/kerwin77106/Cli-Screenshot/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/kerwin77106/Claude-Cli-Screenshot/main/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'
 
 $installDir = Join-Path $env:USERPROFILE '.cli-screenshot'
 $binDir = Join-Path $installDir 'bin'
-$repoZipUrl = 'https://github.com/kerwin77106/Cli-Screenshot/archive/refs/heads/main.zip'
+$repoZipUrl = 'https://github.com/kerwin77106/Claude-Cli-Screenshot/archive/refs/heads/main.zip'
 $tempZip = Join-Path $env:TEMP 'cli-screenshot-install.zip'
 $tempExtract = Join-Path $env:TEMP 'cli-screenshot-extract'
 
