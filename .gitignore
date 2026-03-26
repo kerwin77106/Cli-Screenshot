@@ -1,0 +1,21 @@
+# Screenshots output
+*.png
+
+# Temp files
+*.tmp
+~$*
+
+# Log files
+*.log
+
+# PID files
+*.pid
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
