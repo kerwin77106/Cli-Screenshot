@@ -70,7 +70,58 @@ cli-screenshot version
 
 ## Claude Code Hooks 整合
 
-將 `hooks/claude-hooks.json` 的內容合併到 `~/.claude/settings.json`，即可在 Claude Code 啟動時自動開始監控截圖。
+搭配 [Claude Code Hooks](https://docs.anthropic.com/en/docs/claude-code/hooks)，可以在啟動 Claude Code 時自動開始監控截圖，結束時自動停止。
+
+### 設定步驟
+
+1. 開啟 Claude Code 的設定檔：
+
+```
+~/.claude/settings.json
+```
+
+> 路徑通常是 `C:\Users\<你的使用者名稱>\.claude\settings.json`
+
+2. 在 `"hooks"` 區塊中加入 `SessionStart` 和 `SessionEnd`：
+
+```jsonc
+{
+  "hooks": {
+    // 啟動 Claude Code 時自動開始監控截圖
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cli-screenshot start --daemon --quiet"
+          }
+        ]
+      }
+    ],
+    // 關閉 Claude Code 時自動停止監控
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cli-screenshot stop --quiet"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+> 如果你的 `settings.json` 已有其他 hooks（例如 `PreToolUse`），將 `SessionStart` 和 `SessionEnd` 加在同一層即可，不需要覆蓋原有設定。
+
+3. 儲存後重新啟動 Claude Code，截圖監控就會自動運行。
+
+### 驗證
+
+啟動 Claude Code 後，按 `Win+Shift+S` 截圖，然後在對話框中按 `Ctrl+V`，應該會貼出截圖的檔案路徑（例如 `C:\Users\User\Pictures\Screenshots\abc123.png`）。
 
 ## 技術細節
 
