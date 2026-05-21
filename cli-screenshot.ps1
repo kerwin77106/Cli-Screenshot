@@ -32,5 +32,5 @@ switch ($Command) {
     'start'   { Start-CliScreenshot -Daemon:$Daemon -Interval $Interval -Output $Output -Quiet:$Quiet }
     'stop'    { Stop-CliScreenshot -Quiet:$Quiet }
     'status'  { Get-CliScreenshotStatus }
-    'version' { Write-Host "cli-screenshot v1.0.0" }
+    'version' { Write-Host "cli-screenshot v1.1.0" }
 }

@@ -1,5 +1,21 @@
 $script:PidFile = Join-Path $env:TEMP 'cli-screenshot.pid'
 $script:LogFile = Join-Path $env:TEMP 'cli-screenshot.log'
+$script:RefCountFile = Join-Path $env:TEMP 'cli-screenshot.refcount'
+
+function Get-RefCount {
+    if (-not (Test-Path $script:RefCountFile)) { return 0 }
+    $val = (Get-Content $script:RefCountFile -Raw).Trim()
+    if ($val -match '^\d+$') { return [int]$val } else { return 0 }
+}
+
+function Set-RefCount {
+    param([int]$Count)
+    if ($Count -le 0) {
+        Remove-Item $script:RefCountFile -Force -ErrorAction SilentlyContinue
+    } else {
+        $Count | Set-Content -Path $script:RefCountFile -NoNewline
+    }
+}
 
 function Test-CliScreenshotProcess {
     <#
@@ -48,8 +64,9 @@ function Start-CliScreenshot {
         if ($existingPid -ne $PID) {
             $existingProc = Test-CliScreenshotProcess -PidNumber $existingPid
             if ($null -ne $existingProc) {
+                Set-RefCount ((Get-RefCount) + 1)
                 if (-not $Quiet) {
-                    Write-Host "cli-screenshot is already running (PID: $existingPid)."
+                    Write-Host "cli-screenshot is already running (PID: $existingPid). RefCount: $(Get-RefCount)"
                 }
                 return
             }
@@ -77,6 +94,7 @@ function Start-CliScreenshot {
 
         # Write child PID
         $process.Id | Set-Content -Path $script:PidFile -NoNewline
+        Set-RefCount 1
 
         if (-not $Quiet) {
             Write-Host "cli-screenshot started in background (PID: $($process.Id))."
@@ -111,6 +129,7 @@ function Stop-CliScreenshot {
     )
 
     if (-not (Test-Path $script:PidFile)) {
+        Set-RefCount 0
         if (-not $Quiet) {
             Write-Host "cli-screenshot is not running (no PID file found)."
         }
@@ -121,14 +140,25 @@ function Stop-CliScreenshot {
     $proc = Test-CliScreenshotProcess -PidNumber $pidNumber
 
     if ($null -eq $proc) {
+        Set-RefCount 0
         if (-not $Quiet) {
             Write-Host "cli-screenshot is not running (stale PID file cleaned up)."
         }
         return
     }
 
+    $newCount = (Get-RefCount) - 1
+    if ($newCount -gt 0) {
+        Set-RefCount $newCount
+        if (-not $Quiet) {
+            Write-Host "cli-screenshot still in use by other sessions. RefCount: $newCount"
+        }
+        return
+    }
+
     Stop-Process -Id $pidNumber -Force
     Remove-Item $script:PidFile -Force -ErrorAction SilentlyContinue
+    Set-RefCount 0
 
     if (-not $Quiet) {
         Write-Host "cli-screenshot stopped (PID: $pidNumber)."
@@ -162,6 +192,7 @@ function Get-CliScreenshotStatus {
 
     Write-Host "Status:      RUNNING"
     Write-Host "PID:         $pidNumber"
+    Write-Host "RefCount:    $(Get-RefCount)"
     Write-Host "Memory:      ${memoryMB} MB"
     Write-Host "Uptime:      $uptimeStr"
     Write-Host "Screenshots: $screenshotCount saved"

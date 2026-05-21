@@ -159,6 +159,7 @@ try {
 #### 檔案位置
 - PID 檔：`$env:TEMP\cli-screenshot.pid`
 - Log 檔：`$env:TEMP\cli-screenshot.log`
+- 引用計數檔：`$env:TEMP\cli-screenshot.refcount`
 
 #### 函式：`Start-CliScreenshot`
 ```powershell
@@ -189,38 +190,21 @@ function Start-CliScreenshot {
 
 #### 函式：`Stop-CliScreenshot`
 1. 讀 PID 檔
-2. **嚴謹 PID 驗證**（防誤殺）：
-   ```powershell
-   $proc = Get-Process -Id $pidNumber -ErrorAction SilentlyContinue
-   if ($null -eq $proc) {
-       # 程序不存在，清理 stale PID 檔
-       Remove-Item $pidFile -Force
-       return
-   }
-   # 驗證程序名稱是 PowerShell
-   if ($proc.Name -notmatch 'powershell|pwsh') {
-       Write-Warning "PID $pidNumber is not a PowerShell process (actual: $($proc.Name)). Removing stale PID file."
-       Remove-Item $pidFile -Force
-       return
-   }
-   # 進一步驗證：透過 CIM 確認啟動參數包含 cli-screenshot
-   $wmiProc = Get-CimInstance Win32_Process -Filter "ProcessId = $pidNumber" -ErrorAction SilentlyContinue
-   if ($wmiProc.CommandLine -notlike '*cli-screenshot*') {
-       Write-Warning "PID $pidNumber is a PowerShell process but not cli-screenshot. Removing stale PID file."
-       Remove-Item $pidFile -Force
-       return
-   }
-   # 確認無誤，終止程序
-   Stop-Process -Id $pidNumber -Force
-   ```
-3. 刪除 PID 檔
+2. **嚴謹 PID 驗證**（防誤殺，三層驗證）
+3. **引用計數檢查**：
+   - RefCount - 1 > 0 → 其他 session 還在用，不停止 daemon
+   - RefCount - 1 ≤ 0 → 最後一個 session，停止 daemon 並清理所有檔案
+4. 刪除 PID 檔和引用計數檔
 
 **為什麼需要三層驗證：** 電腦重開機或程式崩潰後，PID 檔殘留。該 PID 可能已被系統分配給 Chrome 或其他服務，直接 `Stop-Process` 會誤殺。
+
+**為什麼需要引用計數：** 多個 Claude Code session 透過 SessionStart/SessionEnd hooks 共用同一個 daemon。沒有引用計數時，任一 session 結束都會殺掉 daemon，導致其他 session 的截圖功能失效。
 
 #### 函式：`Get-CliScreenshotStatus`
 輸出資訊：
 - Status: RUNNING / STOPPED
 - PID
+- RefCount（目前使用中的 session 數量）
 - Memory（MB）
 - Uptime（hh:mm:ss）
 - Screenshots saved（從 log 統計 "NEW screenshot saved" 出現次數）
@@ -281,7 +265,7 @@ switch ($Command) {
     'start'   { Start-CliScreenshot -Daemon:$Daemon -Interval $Interval -Output $Output -Quiet:$Quiet }
     'stop'    { Stop-CliScreenshot -Quiet:$Quiet }
     'status'  { Get-CliScreenshotStatus }
-    'version' { Write-Host "cli-screenshot v1.0.0" }
+    'version' { Write-Host "cli-screenshot v1.1.0" }
 }
 ```
 

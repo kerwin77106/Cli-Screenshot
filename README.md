@@ -10,6 +10,7 @@ Windows 原生 PowerShell 截圖剪貼簿工具。截圖後自動將檔案路徑
 - **三格式寫入**：同時支援文字路徑、圖片、檔案拖放
 - **SHA256 去重**：相同截圖不重複儲存
 - **背景模式**：可作為 daemon 靜默運行
+- **多 Session 安全**：引用計數機制，多個 Claude Code 同時開啟不會互相干擾
 - **零依賴**：純 PowerShell，不需額外安裝任何軟體
 - **PS5 / PS7 通用**：自動處理 STA 執行緒問題
 
@@ -127,6 +128,7 @@ cli-screenshot version
 
 - **STA 自動重啟**：PS7 (pwsh) 預設 MTA，腳本自動偵測並以 `-STA` 重啟
 - **PID 三層驗證**：防止誤殺不相關的程序（程序存在 → PowerShell → 含 cli-screenshot）
+- **引用計數（RefCount）**：多個 Claude Code session 共用同一個 daemon，只有最後一個 session 關閉時才停止 daemon
 - **剪貼簿 Retry**：Snipping Tool 會短暫鎖定剪貼簿，自動重試最多 5 次
 - **記憶體管理**：所有 .NET IDisposable 物件在 finally 區塊顯式 Dispose
 - **Log 輪轉**：超過 5MB 自動截斷
